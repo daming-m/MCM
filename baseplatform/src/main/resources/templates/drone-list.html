@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>无人机管理系统 - 列表</title>
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <style>
+        body { background: #f5f7fa; }
+        .page-header { margin-top: 20px; }
+        .table td { vertical-align: middle !important; }
+        .toolbar { margin-bottom: 15px; }
+        .ai-attrs { color: #666; font-size: 12px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="page-header">
+        <h3>无人机列表 <small>登录成功，欢迎使用</small></h3>
+    </div>
+
+    <div class="toolbar row">
+        <div class="col-sm-3">
+            <input id="searchKeyword" class="form-control" placeholder="搜索名称/型号/序列号">
+        </div>
+        <div class="col-sm-9 text-right">
+            <button class="btn btn-default" onclick="loadTable(1)">搜索</button>
+            <button class="btn btn-success" th:if="${isAdmin}" onclick="openCreate()">新增无人机</button>
+            <a class="btn btn-link" href="/logout">退出登录</a>
+        </div>
+    </div>
+
+    <table class="table table-bordered table-striped">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>名称</th>
+            <th>型号</th>
+            <th>序列号</th>
+            <th>AI属性</th>
+            <th>创建时间</th>
+            <th>操作</th>
+        </tr>
+        </thead>
+        <tbody id="droneBody"></tbody>
+    </table>
+
+    <nav>
+        <ul id="pager" class="pagination"></ul>
+    </nav>
+</div>
+<div class="modal fade" id="droneModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title" id="modalTitle">新增无人机</h4>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="droneId">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <h5>基础信息 <small>（必填）</small></h5>
+                        <div class="form-group">
+                            <label>名称 *</label>
+                            <input id="name" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>型号 *</label>
+                            <input id="model" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>序列号 *</label>
+                            <input id="serialNo" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <h5>AI属性 <small>（自动生成）</small></h5>
+                        <div class="form-group">
+                            <label>最大速度 (km/h)</label>
+                            <input id="maxSpeedKmh" type="number" class="form-control" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>最大续航 (分钟)</label>
+                            <input id="flightTimeMin" type="number" class="form-control" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>最大载重 (kg)</label>
+                            <input id="payloadKg" type="number" step="0.1" class="form-control" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>电池容量 (mAh)</label>
+                            <input id="batteryMah" type="number" class="form-control" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>AI评分</label>
+                            <input id="aiScore" type="number" class="form-control" readonly>
+                        </div>
+                        <div class="form-group" id="regenGroup" style="display:none;">
+                            <button type="button" class="btn btn-info btn-sm" onclick="regenerateAi()">重新生成AI属性</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="saveDrone()">保存</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script th:inline="javascript">
+    const isAdmin = [[${isAdmin}]];
+    let pageNum = 1;
+    const pageSize = 10;
+
+    function loadTable(targetPage) {
+        pageNum = targetPage || pageNum;
+        fetch('/api/drone/page?' + new URLSearchParams({
+            pageNum: pageNum,
+            pageSize: pageSize,
+            keyword: document.getElementById('searchKeyword').value || ''
+        }))
+        .then(response => response.json())
+        .then(res => {
+            if (res.code !== 0) {
+                alert(res.message);
+                return;
+            }
+            renderRows(res.data.records || []);
+            renderPager(res.data.total || 0);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('请求失败');
+        });
+    }
+
+    function renderRows(rows) {
+        const body = document.getElementById('droneBody');
+        body.innerHTML = '';
+        rows.forEach(function (item) {
+            let actions = '<button class="btn btn-xs btn-info" onclick="viewDetail(' + item.id + ')">详情</button>';
+            if (isAdmin) {
+                actions += ' <button class="btn btn-xs btn-primary" onclick="openEdit(' + item.id + ')">编辑</button>';
+                actions += ' <button class="btn btn-xs btn-danger" onclick="deleteDrone(' + item.id + ')">删除</button>';
+            }
+            
+            const aiAttrs = `速度:${item.maxSpeedKmh}km/h 续航:${item.flightTimeMin}min 载重:${item.payloadKg}kg 电池:${item.batteryMah}mAh 评分:${item.aiScore}`;
+            
+            const row = document.createElement('tr');
+            row.innerHTML = 
+                '<td>' + safe(item.id) + '</td>' +
+                '<td>' + safe(item.name) + '</td>' +
+                '<td>' + safe(item.model) + '</td>' +
+                '<td>' + safe(item.serialNo) + '</td>' +
+                '<td><div class="ai-attrs">' + aiAttrs + '</div></td>' +
+                '<td>' + safe(item.createdAt) + '</td>' +
+                '<td>' + actions + '</td>';
+            body.appendChild(row);
+        });
+    }
+
+    function renderPager(total) {
+        const totalPages = Math.max(1, Math.ceil(total / pageSize));
+        if (pageNum > totalPages) {
+            pageNum = totalPages;
+        }
+        const pager = document.getElementById('pager');
+        pager.innerHTML = '';
+        for (let i = 1; i <= totalPages; i++) {
+            const li = document.createElement('li');
+            li.className = i === pageNum ? 'active' : '';
+            li.innerHTML = '<a href="#" onclick="loadTable(' + i + ');return false;">' + i + '</a>';
+            pager.appendChild(li);
+        }
+    }
+
+    function openCreate() {
+        document.getElementById('modalTitle').textContent = '新增无人机';
+        document.getElementById('droneId').value = '';
+        document.getElementById('name').value = '';
+        document.getElementById('model').value = '';
+        document.getElementById('serialNo').value = '';
+        clearAiFields();
+        document.getElementById('regenGroup').style.display = 'none';
+        $('#droneModal').modal('show');
+    }
+
+    function openEdit(id) {
+        fetch('/api/drone/' + id)
+        .then(response => response.json())
+        .then(res => {
+            if (res.code !== 0) {
+                alert(res.message);
+                return;
+            }
+            const d = res.data;
+            document.getElementById('modalTitle').textContent = '编辑无人机';
+            document.getElementById('droneId').value = d.id;
+            document.getElementById('name').value = d.name;
+            document.getElementById('model').value = d.model;
+            document.getElementById('serialNo').value = d.serialNo;
+            fillAiFields(d);
+            document.getElementById('regenGroup').style.display = 'block';
+            $('#droneModal').modal('show');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('请求失败');
+        });
+    }
+    function saveDrone() {
+        if (!document.getElementById('name').value || !document.getElementById('model').value || !document.getElementById('serialNo').value) {
+            alert('请填写所有必填字段');
+            return;
+        }
+        const id = document.getElementById('droneId').value;
+        const payload = {
+            name: document.getElementById('name').value,
+            model: document.getElementById('model').value,
+            serialNo: document.getElementById('serialNo').value
+        };
+        const method = id ? 'PUT' : 'POST';
+        const url = id ? '/api/drone/' + id : '/api/drone';
+
+        fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(response => response.json())
+        .then(res => {
+            if (res.code !== 0) {
+                alert(res.message);
+                return;
+            }
+            $('#droneModal').modal('hide');
+            loadTable(pageNum);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('请求失败');
+        });
+    }
+
+    function deleteDrone(id) {
+        if (!confirm('确认删除该无人机记录吗？')) {
+            return;
+        }
+        fetch('/api/drone/' + id, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(res => {
+            if (res.code !== 0) {
+                alert(res.message);
+                return;
+            }
+            loadTable(pageNum);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('请求失败');
+        });
+    }
+
+    function regenerateAi() {
+        const id = document.getElementById('droneId').value;
+        if (!id) return;
+        
+        fetch('/api/drone/' + id + '/regenerate-ai', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(res => {
+            if (res.code !== 0) {
+                alert(res.message);
+                return;
+            }
+            fillAiFields(res.data);
+            alert('AI属性已重新生成');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('请求失败');
+        });
+    }
+
+    function viewDetail(id) {
+        fetch('/api/drone/' + id)
+        .then(response => response.json())
+        .then(res => {
+            if (res.code !== 0) {
+                alert(res.message);
+                return;
+            }
+            const d = res.data;
+            const detail = `名称: ${d.name}\n型号: ${d.model}\n序列号: ${d.serialNo}\n\nAI属性:\n最大速度: ${d.maxSpeedKmh} km/h\n最大续航: ${d.flightTimeMin} 分钟\n最大载重: ${d.payloadKg} kg\n电池容量: ${d.batteryMah} mAh\nAI评分: ${d.aiScore}`;
+            alert(detail);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('请求失败');
+        });
+    }
+
+    function fillAiFields(data) {
+        document.getElementById('maxSpeedKmh').value = data.maxSpeedKmh || '';
+        document.getElementById('flightTimeMin').value = data.flightTimeMin || '';
+        document.getElementById('payloadKg').value = data.payloadKg || '';
+        document.getElementById('batteryMah').value = data.batteryMah || '';
+        document.getElementById('aiScore').value = data.aiScore || '';
+    }
+
+    function clearAiFields() {
+        document.getElementById('maxSpeedKmh').value = '';
+        document.getElementById('flightTimeMin').value = '';
+        document.getElementById('payloadKg').value = '';
+        document.getElementById('batteryMah').value = '';
+        document.getElementById('aiScore').value = '';
+    }
+
+    function safe(value) {
+        return value === null || value === undefined ? '' : value;
+    }
+
+    // 页面加载完成后初始化
+    document.addEventListener('DOMContentLoaded', function() {
+        loadTable(1);
+        
+        // 搜索框回车事件
+        document.getElementById('searchKeyword').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                loadTable(1);
+            }
+        });
+    });
+</script>
+</body>
+</html>

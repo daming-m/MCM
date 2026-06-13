@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: basePlatform
+  profiles:
+    active: sqlite
+  jackson:
+    time-zone: Asia/Shanghai
+    date-format: yyyy-MM-dd HH:mm:ss
+
+mybatis:
+  mapper-locations: classpath:/mapper/*.xml
+  type-aliases-package: com.md.basePlatform.entity
+  configuration:
+    map-underscore-to-camel-case: true

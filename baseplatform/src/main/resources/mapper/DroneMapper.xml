@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.md.basePlatform.mapper.DroneMapper">
+
+    <resultMap id="DroneResultMap" type="com.md.basePlatform.entity.Drone">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="model" column="model"/>
+        <result property="serialNo" column="serial_no"/>
+        <result property="maxSpeedKmh" column="max_speed_kmh"/>
+        <result property="flightTimeMin" column="flight_time_min"/>
+        <result property="payloadKg" column="payload_kg"/>
+        <result property="batteryMah" column="battery_mah"/>
+        <result property="aiScore" column="ai_score"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.md.basePlatform.entity.Drone" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO drone (name, model, serial_no, max_speed_kmh, flight_time_min, payload_kg, battery_mah, ai_score, created_at, updated_at)
+        VALUES (#{name}, #{model}, #{serialNo}, #{maxSpeedKmh}, #{flightTimeMin}, #{payloadKg}, #{batteryMah}, #{aiScore}, #{createdAt}, #{updatedAt})
+    </insert>
+
+    <select id="findById" parameterType="java.lang.Long" resultMap="DroneResultMap">
+        SELECT id, name, model, serial_no, max_speed_kmh, flight_time_min, payload_kg, battery_mah, ai_score, created_at, updated_at
+        FROM drone
+        WHERE id = #{id}
+    </select>
+
+    <select id="findBySerialNo" parameterType="java.lang.String" resultMap="DroneResultMap">
+        SELECT id, name, model, serial_no, max_speed_kmh, flight_time_min, payload_kg, battery_mah, ai_score, created_at, updated_at
+        FROM drone
+        WHERE serial_no = #{serialNo}
+    </select>
+
+    <select id="findAll" resultMap="DroneResultMap">
+        SELECT id, name, model, serial_no, max_speed_kmh, flight_time_min, payload_kg, battery_mah, ai_score, created_at, updated_at
+        FROM drone
+        ORDER BY id DESC
+    </select>
+
+    <select id="findPageByCondition" resultMap="DroneResultMap">
+        <bind name="keywordLike" value="'%' + keyword + '%'"/>
+        SELECT id, name, model, serial_no, max_speed_kmh, flight_time_min, payload_kg, battery_mah, ai_score, created_at, updated_at
+        FROM drone
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (name LIKE #{keywordLike} OR model LIKE #{keywordLike} OR serial_no LIKE #{keywordLike})
+            </if>
+        </where>
+        ORDER BY id DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <select id="countByCondition" resultType="java.lang.Long">
+        <bind name="keywordLike" value="'%' + keyword + '%'"/>
+        SELECT COUNT(1)
+        FROM drone
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (name LIKE #{keywordLike} OR model LIKE #{keywordLike} OR serial_no LIKE #{keywordLike})
+            </if>
+        </where>
+    </select>
+
+    <update id="update" parameterType="com.md.basePlatform.entity.Drone">
+        UPDATE drone
+        SET name = #{name},
+            model = #{model},
+            serial_no = #{serialNo},
+            max_speed_kmh = #{maxSpeedKmh},
+            flight_time_min = #{flightTimeMin},
+            payload_kg = #{payloadKg},
+            battery_mah = #{batteryMah},
+            ai_score = #{aiScore},
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById" parameterType="java.lang.Long">
+        DELETE FROM drone WHERE id = #{id}
+    </delete>
+
+</mapper>

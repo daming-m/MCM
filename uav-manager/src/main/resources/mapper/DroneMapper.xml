@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.uavmanager.repository.DroneMapper">
+
+    <resultMap id="DroneResultMap" type="com.example.uavmanager.domain.Drone">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="model" property="model"/>
+        <result column="serial_no" property="serialNo"/>
+
+        <result column="max_speed_kmh" property="maxSpeedKmh"/>
+        <result column="flight_time_min" property="flightTimeMin"/>
+        <result column="payload_kg" property="payloadKg"/>
+        <result column="battery_mah" property="batteryMah"/>
+        <result column="ai_score" property="aiScore"/>
+
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <sql id="BaseColumns">
+        id, name, model, serial_no, max_speed_kmh, flight_time_min, payload_kg, battery_mah, ai_score, created_at, updated_at
+    </sql>
+
+    <select id="selectAll" databaseId="mysql" resultMap="DroneResultMap">
+        SELECT
+        <include refid="BaseColumns"/>
+        FROM drones
+        <where>
+            <if test="q != null and q != ''">
+                (name LIKE CONCAT('%', #{q}, '%')
+                OR model LIKE CONCAT('%', #{q}, '%')
+                OR serial_no LIKE CONCAT('%', #{q}, '%'))
+            </if>
+        </where>
+        ORDER BY id DESC
+    </select>
+
+    <select id="selectAll" databaseId="sqlite" resultMap="DroneResultMap">
+        SELECT
+        <include refid="BaseColumns"/>
+        FROM drones
+        <where>
+            <if test="q != null and q != ''">
+                (name LIKE ('%' || #{q} || '%')
+                OR model LIKE ('%' || #{q} || '%')
+                OR serial_no LIKE ('%' || #{q} || '%'))
+            </if>
+        </where>
+        ORDER BY id DESC
+    </select>
+
+    <select id="selectById" resultMap="DroneResultMap">
+        SELECT
+        <include refid="BaseColumns"/>
+        FROM drones
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectIdBySerialNo" resultType="java.lang.Long">
+        SELECT id
+        FROM drones
+        WHERE serial_no = #{serialNo}
+        LIMIT 1
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO drones (
+            name, model, serial_no,
+            max_speed_kmh, flight_time_min, payload_kg, battery_mah, ai_score,
+            created_at, updated_at
+        ) VALUES (
+            #{name}, #{model}, #{serialNo},
+            #{maxSpeedKmh}, #{flightTimeMin}, #{payloadKg}, #{batteryMah}, #{aiScore},
+            #{createdAt}, #{updatedAt}
+        )
+    </insert>
+
+    <update id="update">
+        UPDATE drones
+        SET
+            name = #{name},
+            model = #{model},
+            serial_no = #{serialNo},
+            max_speed_kmh = #{maxSpeedKmh},
+            flight_time_min = #{flightTimeMin},
+            payload_kg = #{payloadKg},
+            battery_mah = #{batteryMah},
+            ai_score = #{aiScore},
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM drones WHERE id = #{id}
+    </delete>
+
+</mapper>
+
