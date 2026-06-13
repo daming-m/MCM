@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>无人机列表</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css"/>
+</head>
+<body>
+<nav class="navbar navbar-default">
+    <div class="container">
+        <div class="navbar-header">
+            <a class="navbar-brand" th:href="@{/drones}">无人机管理</a>
+        </div>
+        <ul class="nav navbar-nav navbar-right">
+            <li><a th:href="@{/logout}">退出</a></li>
+        </ul>
+    </div>
+</nav>
+
+<div class="container">
+    <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+    <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+    <div class="row" style="margin-bottom: 10px;">
+        <div class="col-sm-8">
+            <form class="form-inline" method="get" th:action="@{/drones}">
+                <div class="form-group">
+                    <input class="form-control" type="text" name="q" placeholder="按名称/型号/序列号搜索" th:value="${q}"/>
+                </div>
+                <button class="btn btn-default" type="submit">查询</button>
+                <a class="btn btn-link" th:href="@{/drones}">清空</a>
+            </form>
+        </div>
+        <div class="col-sm-4 text-right">
+            <a class="btn btn-primary" th:href="@{/drones/new}">新增无人机</a>
+        </div>
+    </div>
+
+    <table class="table table-striped table-bordered">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>名称</th>
+            <th>型号</th>
+            <th>序列号</th>
+            <th>AI 属性</th>
+            <th style="width: 160px;">操作</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:if="${#lists.isEmpty(drones)}">
+            <td colspan="6" class="text-muted">暂无数据</td>
+        </tr>
+        <tr th:each="d : ${drones}">
+            <td th:text="${d.id}"></td>
+            <td th:text="${d.name}"></td>
+            <td th:text="${d.model}"></td>
+            <td th:text="${d.serialNo}"></td>
+            <td>
+                <div>
+                    <span class="label label-info">速度</span>
+                    <span th:text="${d.maxSpeedKmh} + ' km/h'"></span>
+                </div>
+                <div>
+                    <span class="label label-info">续航</span>
+                    <span th:text="${d.flightTimeMin} + ' min'"></span>
+                </div>
+                <div>
+                    <span class="label label-info">载重</span>
+                    <span th:text="${d.payloadKg} + ' kg'"></span>
+                </div>
+                <div>
+                    <span class="label label-info">电池</span>
+                    <span th:text="${d.batteryMah} + ' mAh'"></span>
+                </div>
+                <div>
+                    <span class="label label-success">评分</span>
+                    <span th:text="${d.aiScore}"></span>
+                </div>
+            </td>
+            <td>
+                <a class="btn btn-xs btn-default" th:href="@{'/drones/' + ${d.id} + '/edit'}">编辑</a>
+                <form style="display:inline;" method="post" th:action="@{'/drones/' + ${d.id} + '/delete'}"
+                      onsubmit="return confirm('确认删除？');">
+                    <button class="btn btn-xs btn-danger" type="submit">删除</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>
+

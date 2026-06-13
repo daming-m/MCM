@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    platform: sqlite
+    type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: org.sqlite.JDBC
+    url: jdbc:sqlite:./data/uav.db
+    username:
+    password:
+    initialization-mode: always
+

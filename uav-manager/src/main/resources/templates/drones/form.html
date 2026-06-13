@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title th:text="${mode} == 'create' ? '新增无人机' : '编辑无人机'"></title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css"/>
+</head>
+<body>
+<nav class="navbar navbar-default">
+    <div class="container">
+        <div class="navbar-header">
+            <a class="navbar-brand" th:href="@{/drones}">无人机管理</a>
+        </div>
+        <ul class="nav navbar-nav navbar-right">
+            <li><a th:href="@{/logout}">退出</a></li>
+        </ul>
+    </div>
+</nav>
+
+<div class="container" style="max-width: 720px;">
+    <h3 th:text="${mode} == 'create' ? '新增无人机' : '编辑无人机'"></h3>
+
+    <form method="post"
+          th:action="${mode} == 'create' ? @{/drones} : @{'/drones/' + ${drone != null ? drone.id : droneId}}"
+          th:object="${form}">
+        <div class="form-group" th:classappend="${#fields.hasErrors('name')} ? 'has-error'">
+            <label>名称</label>
+            <input class="form-control" type="text" th:field="*{name}" maxlength="64" required/>
+            <span class="help-block" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></span>
+        </div>
+
+        <div class="form-group" th:classappend="${#fields.hasErrors('model')} ? 'has-error'">
+            <label>型号</label>
+            <input class="form-control" type="text" th:field="*{model}" maxlength="64" required/>
+            <span class="help-block" th:if="${#fields.hasErrors('model')}" th:errors="*{model}"></span>
+        </div>
+
+        <div class="form-group" th:classappend="${#fields.hasErrors('serialNo')} ? 'has-error'">
+            <label>序列号</label>
+            <input class="form-control" type="text" th:field="*{serialNo}" maxlength="64" required/>
+            <span class="help-block" th:if="${#fields.hasErrors('serialNo')}" th:errors="*{serialNo}"></span>
+        </div>
+
+        <div th:if="${mode} == 'edit'" class="checkbox">
+            <label>
+                <input type="checkbox" name="regenAi" value="true"/>
+                重新生成 AI 属性
+            </label>
+        </div>
+
+        <div class="form-group">
+            <button class="btn btn-primary" type="submit" th:text="${mode} == 'create' ? '创建' : '保存'"></button>
+            <a class="btn btn-default" th:href="@{/drones}">返回</a>
+        </div>
+
+        <div th:if="${mode} == 'edit' and drone != null" class="panel panel-default">
+            <div class="panel-heading">当前 AI 属性</div>
+            <div class="panel-body">
+                <dl class="dl-horizontal">
+                    <dt>最大速度</dt><dd th:text="${drone.maxSpeedKmh} + ' km/h'"></dd>
+                    <dt>最大续航</dt><dd th:text="${drone.flightTimeMin} + ' min'"></dd>
+                    <dt>最大载重</dt><dd th:text="${drone.payloadKg} + ' kg'"></dd>
+                    <dt>电池容量</dt><dd th:text="${drone.batteryMah} + ' mAh'"></dd>
+                    <dt>AI 评分</dt><dd th:text="${drone.aiScore}"></dd>
+                </dl>
+            </div>
+        </div>
+    </form>
+</div>
+</body>
+</html>
+
