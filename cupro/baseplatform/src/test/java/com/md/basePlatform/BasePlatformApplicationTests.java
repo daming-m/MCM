@@ -1,6 +1,7 @@
 package com.md.basePlatform;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
 
 /**
  * Spring Boot 应用冒烟测试
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.Test;
  * <p>这是一个最小化的冒烟测试，不加载任何 Mock，完全依赖真实的 Spring 配置。
  * 如需更快的单元测试，应在其他测试类中使用 @WebMvcTest 或 @ExtendWith(MockitoExtension.class)。
  */
+@SpringBootTest
 class BasePlatformApplicationTests {
 
     /**

@@ -70,7 +70,6 @@ const statusOptions = [
       clearable
       style="width: 180px"
       @input="onFieldChange('serialNumber', $event)"
-      @clear="onFieldChange('serialNumber', '')"
       @keyup.enter="emit('search')"
     />
 
@@ -81,7 +80,6 @@ const statusOptions = [
       clearable
       style="width: 180px"
       @input="onFieldChange('model', $event)"
-      @clear="onFieldChange('model', '')"
       @keyup.enter="emit('search')"
     />
 
